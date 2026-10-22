@@ -12,7 +12,7 @@ import android.os.SystemClock
 import android.util.Log
 
 class PiperPlugin : KigPlugin {
-    override val descriptor = PluginDescriptor("engine.piper", "Piper 语音引擎", "导入语音包，选择喜欢的朗读声音", version = "0.8.1", license = "GPL-3.0-only")
+    override val descriptor = PluginDescriptor("engine.piper", "Piper 语音引擎", "导入语音包，选择喜欢的朗读声音", version = "0.8.2", license = "GPL-3.0-only")
     private lateinit var environment: PluginEnvironment
     private lateinit var voices: PiperVoices
     private val access = Mutex()
@@ -86,7 +86,7 @@ class PiperPlugin : KigPlugin {
     }
     override val contributions = PluginContributions(drawerEntries = listOf(DrawerEntry("about", "Piper 插件说明", "about", PluginIcon.SPEAKER, settingsPage = true)))
     override fun page(pageId: String, context: PluginContext) = if (pageId == "about") PluginPage(pageId, "Piper", listOf(
-        PageBlock.Text("Piper 独立引擎", true), PageBlock.Text("语音包通过语音合成服务统一导入、选择、重命名和删除。支持旧 .kigvpk / ZIP 与标准 Piper ONNX+JSON ZIP。"),
-        PageBlock.Notice("发音词典、eSpeak 与 ONNX Runtime 仅在本插件；首版移植本地库支持 arm64-v8a。"))) else null
-    override suspend fun execute(actionId: String, context: PluginContext) = PluginOutcome.Message("请通过语音合成服务管理 Piper")
+        PageBlock.Text("Piper 语音引擎", true), PageBlock.Text("在语音合成设置中添加和选择声音，也可管理已有语音包。支持 .kigvpk，以及包含 Piper 模型和配置的 ZIP 文件。"),
+        PageBlock.Notice("需要搭配语音合成服务使用。目前支持 64 位 ARM 设备。"))) else null
+    override suspend fun execute(actionId: String, context: PluginContext) = PluginOutcome.Message("请在语音合成设置中管理 Piper 声音")
 }

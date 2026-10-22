@@ -1,0 +1,16 @@
+{
+  "id": "engine.piper",
+  "name": "Piper 语音引擎",
+  "version": "0.8.0",
+  "versionCode": 8,
+  "entryClass": "com.kigtts.engines.piper.PiperPlugin",
+  "apiVersion": 9,
+  "minSdk": 26,
+  "runtime": "android-dex",
+  "license": "GPL-3.0-only",
+  "capabilities": [
+    "tts",
+    "ui",
+    "voice-packs"
+  ]
+}

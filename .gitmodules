@@ -1,0 +1,6 @@
+[submodule ".sdk"]
+	path = .sdk
+	url = https://github.com/KIGTTS/plugin-sdk.git
+[submodule ".tts-support"]
+	path = .tts-support
+	url = https://github.com/KIGTTS/tts-support.git

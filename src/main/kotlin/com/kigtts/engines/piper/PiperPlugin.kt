@@ -12,7 +12,7 @@ import android.os.SystemClock
 import android.util.Log
 
 class PiperPlugin : KigPlugin {
-    override val descriptor = PluginDescriptor("engine.piper", "Piper 语音引擎", "旧 KIGTTS Piper 的独立插件，可导入不同语音包", version = "0.8.0", license = "GPL-3.0-only")
+    override val descriptor = PluginDescriptor("engine.piper", "Piper 语音引擎", "导入语音包，选择喜欢的朗读声音", version = "0.8.1", license = "GPL-3.0-only")
     private lateinit var environment: PluginEnvironment
     private lateinit var voices: PiperVoices
     private val access = Mutex()
@@ -47,7 +47,7 @@ class PiperPlugin : KigPlugin {
                     for (segment in speechSegments(request.text)) {
                         currentCoroutineContext().ensureActive()
                         if (segment.isBlank()) continue
-                        val audio = model.synthesize(speaker, request.copy(text = segment))
+                        val audio = model.synthesize(speaker, request.copy(text = segment, language = pack.language))
                         if (first) { Log.i("PiperPerf", "first audio ms=${SystemClock.elapsedRealtime() - started} chars=${request.text.length}"); first = false }
                         for (offset in audio.bytes.indices step 32_768) {
                             currentCoroutineContext().ensureActive()
@@ -70,6 +70,7 @@ class PiperPlugin : KigPlugin {
                     VoiceOperation.DELETE -> voices.delete(requireNotNull(command.voiceId))
                     VoiceOperation.RENAME -> voices.rename(requireNotNull(command.voiceId), requireNotNull(command.value))
                     VoiceOperation.REFRESH -> Unit
+                    VoiceOperation.UPDATE_PARAMETERS -> voices.parameters(requireNotNull(command.packId), requireNotNull(command.value))
                     VoiceOperation.UPDATE_METADATA -> voices.update(requireNotNull(command.packId), requireNotNull(command.metadata))
                     VoiceOperation.REORDER -> voices.reorder(command.order)
                     VoiceOperation.SET_AVATAR -> voices.avatar(requireNotNull(command.packId), environment.storage.file(requireNotNull(command.resourcePath)))

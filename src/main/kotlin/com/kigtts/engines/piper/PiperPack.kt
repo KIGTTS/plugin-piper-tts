@@ -33,7 +33,9 @@ internal data class PiperPack(val directory: File, val model: File, val config: 
             val speakers = json.optJSONObject("speaker_id_map")?.let { map -> map.keys().asSequence().associateWith { map.getInt(it) } }
                 ?.takeIf { it.isNotEmpty() } ?: (0 until json.optInt("num_speakers", 1).coerceIn(1, 100)).associate { "声音 ${it + 1}" to it }
             require(speakers.size <= 100 && speakers.values.all { it >= 0 })
-            val language = json.optJSONObject("language")?.optString("code").orEmpty().ifBlank { "und" }
+            val language = json.optJSONObject("language")?.optString("code").orEmpty()
+                .ifBlank { json.optJSONObject("espeak")?.optString("voice").orEmpty() }
+                .ifBlank { "und" }.replace('_', '-')
             val voice = json.optJSONObject("espeak")?.optString("voice").orEmpty().ifBlank { language }.ifBlank { "en-us" }
             return PiperPack(directory, model, config, dictionary, rate, language, voice, type, idMap, phoneMap, speakers)
         }

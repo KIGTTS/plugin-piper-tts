@@ -129,4 +129,24 @@ class PiperVoicesTest {
         voices.reorder(listOf(second.packId!!, first.packId!!))
         assertEquals(0L, voices.packs().first { it.id == second.packId }.metadata.order)
     }
+    @Test fun settingsArePerPackAndSurviveRenameReplacementExportAndRestart() {
+        val storage = PluginStorage(files.newFolder()); val voices = PiperVoices(storage)
+        val first = voices.import(archive()); val second = voices.import(archive())
+        assertEquals("en-US", first.language)
+        voices.parameters(first.packId!!, """{"noise_scale":0.3,"noise_w":1.2,"volume":0.7}""")
+        fun values(id: String) = PiperVoices(storage).packs().first { it.id == id }.parameters.associate { it.id to it.value }
+        assertEquals(.3f, values(first.packId!!).getValue("noise_scale"), .001f)
+        assertEquals(.667f, values(second.packId!!).getValue("noise_scale"), .001f)
+        voices.rename(first.id, "保留参数")
+        voices.import(archive(), first.packId)
+        assertEquals(.7f, values(first.packId!!).getValue("volume"), .001f)
+        val restored = PiperVoices(PluginStorage(files.newFolder())).also { it.import(voices.export(first.packId!!)) }
+        assertEquals(values(first.packId!!), restored.packs().single().parameters.associate { it.id to it.value })
+        val pack = voices.resolve(first.id).first
+        assertArrayEquals(floatArrayOf(.3f, .5f, 1.2f), PiperAudioSettings.scales(pack, 2f), .001f)
+        for (bad in listOf("""{"volume":5}""", """{"noise_scale":0.9,"unknown":1}""")) {
+            assertTrue(runCatching { voices.parameters(first.packId!!, bad) }.isFailure)
+            assertEquals(.3f, values(first.packId!!).getValue("noise_scale"), .001f)
+        }
+    }
 }

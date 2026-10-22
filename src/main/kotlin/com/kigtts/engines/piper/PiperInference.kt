@@ -32,7 +32,7 @@ internal class PiperModel private constructor(private val pack: PiperPack, priva
             inputs[inputName] = OnnxTensor.createTensor(runtime, LongBuffer.wrap(ids), longArrayOf(1, ids.size.toLong()))
             inputs[lengthName] = OnnxTensor.createTensor(runtime, LongBuffer.wrap(longArrayOf(ids.size.toLong())), longArrayOf(1))
             scaleName?.let { inputs[it] = OnnxTensor.createTensor(runtime,
-                FloatBuffer.wrap(floatArrayOf(.667f, 1f / request.rate, .8f)), longArrayOf(3)) }
+                FloatBuffer.wrap(PiperAudioSettings.scales(pack, request.rate)), longArrayOf(3)) }
             speakerName?.let { inputs[it] = OnnxTensor.createTensor(runtime,
                 LongBuffer.wrap(longArrayOf(speaker.toLong())), longArrayOf(1)) }
             session.run(inputs).use { result ->
@@ -40,8 +40,9 @@ internal class PiperModel private constructor(private val pack: PiperPack, priva
                 val samples = unwrap(result[0].value)
                 require(samples.isNotEmpty()) { "Piper 未产生音频" }
                 val pcm = ByteArray(samples.size * 2)
+                val volume = PiperAudioSettings.parameters(pack).first { it.id == "volume" }.value
                 samples.forEachIndexed { index, value ->
-                    val sample = (value.coerceIn(-1f, 1f) * 32767).toInt()
+                    val sample = ((value * volume).coerceIn(-1f, 1f) * 32767).toInt()
                     pcm[index * 2] = sample.toByte(); pcm[index * 2 + 1] = (sample shr 8).toByte()
                 }
                 return PcmAudio(pcm, pack.sampleRate)

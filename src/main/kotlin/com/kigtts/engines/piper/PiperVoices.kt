@@ -17,7 +17,7 @@ internal class PiperVoices(private val storage: PluginStorage) {
             val image = File(dir, meta.getString("avatar"))
             VoicePackInfo(dir.name, PiperMetadata.data(meta), pack.speakers.values.map { "${dir.name}:$it" },
                 if (image.isFile) "models/voices/${dir.name}/${meta.getString("avatar")}" else null,
-                editable = true, exportable = true, deletable = true)
+                editable = true, exportable = true, deletable = true, parameters = PiperAudioSettings.parameters(pack))
         }.getOrNull()
     }.sortedWith(compareByDescending<VoicePackInfo> { it.metadata.pinned }.thenBy { it.metadata.order }.thenBy { it.metadata.name })
     fun list(): List<VoiceInfo> = packs().flatMap { info ->
@@ -90,6 +90,7 @@ internal class PiperVoices(private val storage: PluginStorage) {
         order.forEachIndexed { i, id -> update(id, current.first { it.id == id }.metadata.copy(order = i.toLong())) }
     }
     fun avatar(id: String, source: File) = setPiperAvatar(directory(id), source)
+    fun parameters(id: String, value: String) = PiperAudioSettings.update(PiperPack.read(directory(id)), value)
     fun export(id: String): File = exportPiperPack(directory(id), storage.temporary)
     private fun save() { settings.writeText(JSONObject().put("voice", selected.orEmpty()).toString()) }
 }

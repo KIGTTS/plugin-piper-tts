@@ -60,6 +60,7 @@ class PiperSynthesisTest {
         val second = engine.info.voices.last().id
         engine.synthesize(TtsRequest("again", voiceId = second)).toList()
         assertEquals(1, models.size); assertEquals(listOf(0, 1), models.single().speakers)
+        assertTrue(models.single().requests.all { it.language == "und" })
         engine.control(TtsControl(TtsControlOperation.RELEASE)); assertEquals(1, models.single().closed)
         engine.synthesize(TtsRequest("next")).toList(); assertEquals(2, models.size)
         plugin.close()

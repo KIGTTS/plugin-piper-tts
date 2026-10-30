@@ -1,8 +1,8 @@
 {
   "id": "engine.piper",
   "name": "Piper 语音引擎",
-  "version": "0.8.2",
-  "versionCode": 10,
+  "version": "0.8.3",
+  "versionCode": 11,
   "entryClass": "com.kigtts.engines.piper.PiperPlugin",
   "apiVersion": 21,
   "minSdk": 26,
@@ -15,5 +15,9 @@
     "tts",
     "ui",
     "voice-packs"
-  ]
+  ],
+  "permissionPurposes": {
+    "tts": "使用已导入的语音模型，在设备上将文字合成为朗读音频。",
+    "voice-packs": "导入、选择和移除 Piper 语音包，提供可用于朗读的声音。"
+  }
 }

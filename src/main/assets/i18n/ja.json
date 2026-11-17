@@ -1,0 +1,8 @@
+{
+  "label.about": "Piper について",
+  "page.title": "Piper 音声エンジン",
+  "page.body": "読み上げ設定で音声の追加、選択、管理ができます。Piper のモデルと設定を含む .kigvpk または ZIP に対応しています",
+  "page.requirements": "64 ビット ARM デバイスの読み上げ機能と組み合わせて使用します",
+  "page.manage": "読み上げ設定で Piper の音声を管理",
+  "voice.export": "音声パックを書き出す"
+}

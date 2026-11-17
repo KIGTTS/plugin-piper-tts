@@ -13,7 +13,7 @@ import android.util.Log
 
 class PiperPlugin : KigPlugin {
     override val descriptor = PluginDescriptor("engine.piper", "Piper 语音引擎", "导入语音包，选择喜欢的朗读声音", version = "0.8.4", license = "GPL-3.0-only")
-    override val localization = PluginLocalization("zh-CN", listOf("zh-CN", "en", "ko"))
+    override val localization = PluginLocalization("zh-CN", listOf("zh-CN", "en", "ko", "ja"))
     private var strings = PluginStrings(emptyMap())
     private lateinit var environment: PluginEnvironment
     private lateinit var voices: PiperVoices

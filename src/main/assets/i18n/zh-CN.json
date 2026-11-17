@@ -1,0 +1,8 @@
+{
+  "label.about": "Piper 插件说明",
+  "page.title": "Piper 语音引擎",
+  "page.body": "在语音合成设置中添加和选择声音，也可管理已有语音包。支持 .kigvpk，以及包含 Piper 模型和配置的 ZIP 文件。",
+  "page.requirements": "需要搭配语音合成服务使用。目前支持 64 位 ARM 设备。",
+  "page.manage": "请在语音合成设置中管理 Piper 声音",
+  "voice.export": "导出语音包"
+}

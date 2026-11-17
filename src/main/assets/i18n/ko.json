@@ -1,0 +1,8 @@
+{
+  "label.about": "Piper 정보",
+  "page.title": "Piper 음성 엔진",
+  "page.body": "음성 합성 설정에서 음성을 추가하고 선택하거나 기존 음성 팩을 관리하세요. .kigvpk 및 Piper 모델과 설정이 포함된 ZIP 파일을 지원합니다.",
+  "page.requirements": "64비트 ARM 기기에서 음성 합성과 함께 사용할 수 있습니다.",
+  "page.manage": "음성 합성 설정에서 Piper 음성을 관리하세요",
+  "voice.export": "음성 팩 내보내기"
+}

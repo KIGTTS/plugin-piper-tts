@@ -13,13 +13,15 @@ import android.util.Log
 
 class PiperPlugin : KigPlugin {
     override val descriptor = PluginDescriptor("engine.piper", "Piper 语音引擎", "导入语音包，选择喜欢的朗读声音", version = "0.8.3", license = "GPL-3.0-only")
+    override val localization = PluginLocalization("zh-CN", listOf("zh-CN", "en", "ko"))
+    private var strings = PluginStrings(emptyMap())
     private lateinit var environment: PluginEnvironment
     private lateinit var voices: PiperVoices
     private val access = Mutex()
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     internal var modelFactory: (PluginEnvironment, PiperPack) -> PiperInferenceEngine = PiperModel::open
     private val models = ResidentResource<List<String>, PiperInferenceEngine>(scope, { it.close() })
-    override suspend fun attach(environment: PluginEnvironment) { this.environment = environment; voices = PiperVoices(environment.storage) }
+    override suspend fun attach(environment: PluginEnvironment) { this.environment = environment; strings = PluginStrings.fromAssets(environment.assets); voices = PiperVoices(environment.storage) }
     override val tts = object : TtsEngine {
         override val info get() = TtsInfo(if (voices.list().isEmpty()) EngineAvailability.NEEDS_RESOURCES else EngineAvailability.READY,
             voices.list(), maxTextLength = 500, selectedVoiceId = voices.selected, importsVoicePacks = true, managesVoices = true, packs = voices.packs(), supportsControl = true)
@@ -76,7 +78,7 @@ class PiperPlugin : KigPlugin {
                     VoiceOperation.SET_AVATAR -> voices.avatar(requireNotNull(command.packId), environment.storage.file(requireNotNull(command.resourcePath)))
                     VoiceOperation.EXPORT -> {
                         val file = voices.export(requireNotNull(command.packId))
-                        return@withLock PluginOutcome.ExportResource("导出语音包", PluginResource(file.relativeTo(environment.storage.root).invariantSeparatorsPath, descriptor.id),
+                        return@withLock PluginOutcome.ExportResource(strings.text("voice.export", environment.locale, fallback = "导出语音包"), PluginResource(file.relativeTo(environment.storage.root).invariantSeparatorsPath, descriptor.id),
                             voices.packs().first { it.id == command.packId }.metadata.name.replace(Regex("[\\\\/:*?\"<>|]"), "_").take(100) + ".kigvpk", "application/zip", temporary = true)
                     }
                 }
@@ -84,9 +86,19 @@ class PiperPlugin : KigPlugin {
             }
         }
     }
-    override val contributions = PluginContributions(drawerEntries = listOf(DrawerEntry("about", "Piper 插件说明", "about", PluginIcon.SPEAKER, settingsPage = true)))
-    override fun page(pageId: String, context: PluginContext) = if (pageId == "about") PluginPage(pageId, "Piper", listOf(
-        PageBlock.Text("Piper 语音引擎", true), PageBlock.Text("在语音合成设置中添加和选择声音，也可管理已有语音包。支持 .kigvpk，以及包含 Piper 模型和配置的 ZIP 文件。"),
-        PageBlock.Notice("需要搭配语音合成服务使用。目前支持 64 位 ARM 设备。"))) else null
-    override suspend fun execute(actionId: String, context: PluginContext) = PluginOutcome.Message("请在语音合成设置中管理 Piper 声音")
+    override val contributions get() = contributions(PluginContext("", ""))
+    override fun contributions(context: PluginContext): PluginContributions {
+        fun copy(key: String, fallback: String) = strings.text(key, context.locale, fallback = fallback)
+        return PluginContributions(drawerEntries = listOf(DrawerEntry("about", copy("label.about", "Piper 插件说明"), "about", PluginIcon.SPEAKER, settingsPage = true)))
+    }
+
+    override fun page(pageId: String, context: PluginContext): PluginPage? {
+        fun copy(key: String, fallback: String) = strings.text(key, context.locale, fallback = fallback)
+        return if (pageId == "about") PluginPage(pageId, "Piper", listOf(
+            PageBlock.Text(copy("page.title", "Piper 语音引擎"), true), PageBlock.Text(copy("page.body", "在语音合成设置中添加和选择声音，也可管理已有语音包。支持 .kigvpk，以及包含 Piper 模型和配置的 ZIP 文件。")),
+            PageBlock.Notice(copy("page.requirements", "需要搭配语音合成服务使用。目前支持 64 位 ARM 设备。")))) else null
+    }
+
+    override suspend fun execute(actionId: String, context: PluginContext) =
+        PluginOutcome.Message(strings.text("page.manage", context.locale, fallback = "请在语音合成设置中管理 Piper 声音"))
 }

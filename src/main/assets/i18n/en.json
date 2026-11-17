@@ -1,0 +1,8 @@
+{
+  "label.about": "About Piper",
+  "page.title": "Piper voice engine",
+  "page.body": "Add, select and manage voices in Speech Synthesis settings. Supports .kigvpk and ZIP archives containing a Piper model and configuration.",
+  "page.requirements": "Use with speech synthesis on a 64-bit ARM device.",
+  "page.manage": "Manage Piper voices in Speech Synthesis settings",
+  "voice.export": "Export voice pack"
+}

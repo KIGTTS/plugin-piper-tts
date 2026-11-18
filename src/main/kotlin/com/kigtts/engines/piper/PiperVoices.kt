@@ -7,21 +7,27 @@ import java.io.File
 import java.util.UUID
 import java.util.zip.ZipFile
 
-internal class PiperVoices(private val storage: PluginStorage) {
+internal class PiperVoices(
+    private val storage: PluginStorage,
+    private val copy: (String, Map<String, String>, String) -> String = { _, _, fallback -> fallback },
+) {
+    private fun readPack(directory: File) = PiperPack.read(directory) { number ->
+        copy("voice.speaker", mapOf("number" to number.toString()), "声音 $number")
+    }
     private val root = storage.directory("models/voices")
     private val settings = storage.file("config/selection.json").also { storage.configuration }
     var selected: String? = runCatching { JSONObject(settings.readText()).optString("voice").takeIf(String::isNotBlank) }.getOrNull(); private set
     fun packs(): List<VoicePackInfo> = root.listFiles().orEmpty().filter { it.isDirectory && it.name.startsWith("voice-") }.mapNotNull { dir ->
         runCatching {
-            val pack = PiperPack.read(dir); val meta = PiperMetadata.read(dir)
+            val pack = readPack(dir); val meta = PiperMetadata.read(dir)
             val image = File(dir, meta.getString("avatar"))
             VoicePackInfo(dir.name, PiperMetadata.data(meta), pack.speakers.values.map { "${dir.name}:$it" },
                 if (image.isFile) "models/voices/${dir.name}/${meta.getString("avatar")}" else null,
-                editable = true, exportable = true, deletable = true, parameters = PiperAudioSettings.parameters(pack))
+                editable = true, exportable = true, deletable = true, parameters = PiperAudioSettings.parameters(pack) { key -> copy(key, emptyMap(), key) })
         }.getOrNull()
     }.sortedWith(compareByDescending<VoicePackInfo> { it.metadata.pinned }.thenBy { it.metadata.order }.thenBy { it.metadata.name })
     fun list(): List<VoiceInfo> = packs().flatMap { info ->
-        val pack = PiperPack.read(directory(info.id))
+        val pack = readPack(directory(info.id))
         pack.speakers.map { (speaker, id) -> VoiceInfo("${info.id}:$id", if (pack.speakers.size == 1) info.metadata.name else "${info.metadata.name} · $speaker",
             pack.language, info.metadata.remark, true, info.metadata.name, info.id) }
     }
@@ -31,9 +37,11 @@ internal class PiperVoices(private val storage: PluginStorage) {
     }
     fun choose(id: String) { require(list().any { it.id == id }) { "声音不存在" }; selected = id; save() }
     fun resolve(id: String?): Pair<PiperPack, Int> {
-        val voice = id ?: selected ?: list().firstOrNull()?.id ?: throw EngineException(EngineError.NOT_CONFIGURED, "Piper 尚未导入语音包")
-        require(list().any { it.id == voice }) { "声音不存在" }
-        return PiperPack.read(directory(voice.substringBefore(':'))) to voice.substringAfter(':').toInt()
+        val voice = id ?: selected ?: list().firstOrNull()?.id ?: throw EngineException(EngineError.NOT_CONFIGURED, copy("voice.not_imported", emptyMap(), "请先导入 Piper 语音包"))
+        if (list().none { it.id == voice }) {
+            throw EngineException(EngineError.NOT_CONFIGURED, copy("voice.missing", emptyMap(), "找不到选中的 Piper 声音"))
+        }
+        return readPack(directory(voice.substringBefore(':'))) to voice.substringAfter(':').toInt()
     }
     fun import(archive: File, replacing: String? = null): VoiceInfo {
         require(archive.isFile && archive.length() in 1..2L * 1024 * 1024 * 1024)
@@ -62,7 +70,10 @@ internal class PiperVoices(private val storage: PluginStorage) {
                 val avatar = File(old, meta.getString("avatar"))
                 if (avatar.isFile) File(directory, meta.getString("avatar")).also { it.parentFile!!.mkdirs(); avatar.copyTo(it, overwrite = true) }
             }
-            if (meta.optString("name") == directory.name) meta.put("name", "Piper 语音 ${packs().size + 1}")
+            if (meta.optString("name") == directory.name) {
+                val number = packs().size + 1
+                meta.put("name", copy("voice.default_name", mapOf("number" to number.toString()), "Piper 语音 $number"))
+            }
             PiperMetadata.save(directory, meta)
             val id = replacing ?: "voice-${UUID.randomUUID()}"
             val destination = File(root, id)

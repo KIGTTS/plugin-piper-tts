@@ -6,7 +6,7 @@ import org.json.JSONObject
 
 /** Stored alongside pack metadata, so updates, exports and different speakers share one preset. */
 internal object PiperAudioSettings {
-    fun parameters(pack: PiperPack): List<VoiceParameter> {
+    fun parameters(pack: PiperPack, label: (String) -> String = { it }): List<VoiceParameter> {
         val defaults = JSONObject(pack.config.readText()).optJSONObject("inference") ?: JSONObject()
         val saved = PiperMetadata.read(pack.directory).optJSONObject("audioSettings") ?: JSONObject()
         fun parameter(id: String, label: String, fallback: Double, max: Float, suffix: String = ""): VoiceParameter {
@@ -14,8 +14,8 @@ internal object PiperAudioSettings {
             val value = saved.optDouble(id, initial.toDouble()).toFloat().takeIf { it.isFinite() && it in 0f..max } ?: initial
             return VoiceParameter(id, label, value, 0f, max, initial, suffix = suffix)
         }
-        return listOf(parameter("noise_scale", "音色变化", .667, 2f),
-            parameter("noise_w", "节奏变化", .8, 2f), parameter("volume", "音量", 1.0, 2f, "×"))
+        return listOf(parameter("noise_scale", label("parameter.timbre"), .667, 2f),
+            parameter("noise_w", label("parameter.rhythm"), .8, 2f), parameter("volume", label("parameter.volume"), 1.0, 2f, "×"))
     }
     fun update(pack: PiperPack, encoded: String) {
         val values = JSONObject(encoded)

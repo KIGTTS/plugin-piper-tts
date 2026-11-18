@@ -9,7 +9,7 @@ internal data class PiperPack(val directory: File, val model: File, val config: 
     val sampleRate: Int, val language: String, val espeakVoice: String, val phonemeType: String,
     val ids: Map<String, List<Int>>, val phoneMap: Map<String, List<String>>, val speakers: Map<String, Int>) {
     companion object {
-        fun read(directory: File): PiperPack {
+        fun read(directory: File, defaultSpeaker: (Int) -> String = { "声音 $it" }): PiperPack {
             fun local(path: String): File {
                 return File(directory, safePackPath(path)).canonicalFile.also { require(it.toPath().startsWith(directory.canonicalFile.toPath())) }
             }
@@ -31,7 +31,7 @@ internal data class PiperPack(val directory: File, val model: File, val config: 
             require(idMap.isNotEmpty() && idMap.values.flatten().all { it in 0..1_000_000 })
             val phoneMap = json.optJSONObject("phoneme_map")?.let { arrays(it) { value -> value } } ?: emptyMap()
             val speakers = json.optJSONObject("speaker_id_map")?.let { map -> map.keys().asSequence().associateWith { map.getInt(it) } }
-                ?.takeIf { it.isNotEmpty() } ?: (0 until json.optInt("num_speakers", 1).coerceIn(1, 100)).associate { "声音 ${it + 1}" to it }
+                ?.takeIf { it.isNotEmpty() } ?: (0 until json.optInt("num_speakers", 1).coerceIn(1, 100)).associate { defaultSpeaker(it + 1) to it }
             require(speakers.size <= 100 && speakers.values.all { it >= 0 })
             val language = json.optJSONObject("language")?.optString("code").orEmpty()
                 .ifBlank { json.optJSONObject("espeak")?.optString("voice").orEmpty() }

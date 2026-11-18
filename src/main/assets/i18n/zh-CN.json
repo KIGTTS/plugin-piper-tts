@@ -4,5 +4,19 @@
   "page.body": "在语音合成设置中添加和选择声音，也可管理已有语音包。支持 .kigvpk，以及包含 Piper 模型和配置的 ZIP 文件。",
   "page.requirements": "需要搭配语音合成服务使用。目前支持 64 位 ARM 设备。",
   "page.manage": "请在语音合成设置中管理 Piper 声音",
-  "voice.export": "导出语音包"
+  "voice.export": "导出语音包",
+  "parameter.timbre": "音色变化",
+  "parameter.rhythm": "节奏变化",
+  "parameter.volume": "音量",
+  "voice.speaker": "声音 {number}",
+  "voice.default_name": "Piper 语音 {number}",
+  "voice.not_imported": "请先导入 Piper 语音包",
+  "voice.missing": "找不到选中的 Piper 声音",
+  "voice.import_failed": "无法导入 Piper 语音包，请检查模型和配置文件",
+  "voice.action_failed": "无法完成 Piper 语音包操作",
+  "voice.invalid_parameter": "语音参数无效或超出范围",
+  "engine.text_limit": "Piper 单次最多朗读 500 个字符",
+  "engine.initialization": "无法加载 Piper 语音模型",
+  "engine.library": "无法加载 Piper 本地运行库",
+  "engine.inference": "Piper 无法合成这段文字"
 }

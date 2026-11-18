@@ -4,5 +4,19 @@
   "page.body": "読み上げ設定で音声の追加、選択、管理ができます。Piper のモデルと設定を含む .kigvpk または ZIP に対応しています",
   "page.requirements": "64 ビット ARM デバイスの読み上げ機能と組み合わせて使用します",
   "page.manage": "読み上げ設定で Piper の音声を管理",
-  "voice.export": "音声パックを書き出す"
+  "voice.export": "音声パックを書き出す",
+  "parameter.timbre": "声色の変化",
+  "parameter.rhythm": "リズムの変化",
+  "parameter.volume": "音量",
+  "voice.speaker": "音声 {number}",
+  "voice.default_name": "Piper 音声 {number}",
+  "voice.not_imported": "先に Piper の音声パックをインポートしてください",
+  "voice.missing": "選択した Piper の音声が見つかりません",
+  "voice.import_failed": "Piper の音声パックをインポートできません。モデルと設定ファイルを確認してください。",
+  "voice.action_failed": "Piper の音声パックの操作を完了できません",
+  "voice.invalid_parameter": "音声設定が無効か、範囲外です",
+  "engine.text_limit": "Piper は一度に最大 500 文字まで読み上げられます",
+  "engine.initialization": "Piper の音声モデルを読み込めません",
+  "engine.library": "Piper のランタイムを読み込めません",
+  "engine.inference": "Piper でこのテキストを合成できません"
 }

@@ -12,7 +12,7 @@ import android.os.SystemClock
 import android.util.Log
 
 class PiperPlugin : KigPlugin {
-    override val descriptor = PluginDescriptor("engine.piper", "Piper 语音引擎", "导入语音包，选择喜欢的朗读声音", version = "0.8.4", license = "GPL-3.0-only")
+    override val descriptor = PluginDescriptor("engine.piper", "Piper 语音引擎", "导入语音包，选择喜欢的朗读声音", version = "0.8.5", license = "GPL-3.0-only")
     override val localization = PluginLocalization("zh-CN", listOf("zh-CN", "en", "ko", "ja"))
     private var strings = PluginStrings(emptyMap())
     private lateinit var environment: PluginEnvironment
@@ -21,7 +21,35 @@ class PiperPlugin : KigPlugin {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     internal var modelFactory: (PluginEnvironment, PiperPack) -> PiperInferenceEngine = PiperModel::open
     private val models = ResidentResource<List<String>, PiperInferenceEngine>(scope, { it.close() })
-    override suspend fun attach(environment: PluginEnvironment) { this.environment = environment; strings = PluginStrings.fromAssets(environment.assets); voices = PiperVoices(environment.storage) }
+    override suspend fun attach(environment: PluginEnvironment) {
+        this.environment = environment
+        strings = PluginStrings.fromAssets(environment.assets)
+        voices = PiperVoices(environment.storage) { key, arguments, fallback ->
+            strings.text(key, environment.locale, arguments, fallback)
+        }
+    }
+
+    private fun text(key: String, fallback: String) = strings.text(key, environment.locale, fallback = fallback)
+
+    private fun openModel(pack: PiperPack): PiperInferenceEngine = try {
+        modelFactory(environment, pack)
+    } catch (cancelled: CancellationException) {
+        throw cancelled
+    } catch (error: LinkageError) {
+        throw EngineException(EngineError.INITIALIZATION, text("engine.library", "无法加载 Piper 本地运行库"), error)
+    } catch (error: Exception) {
+        throw EngineException(EngineError.INITIALIZATION, text("engine.initialization", "无法加载 Piper 语音模型"), error)
+    }
+
+    private suspend fun synthesize(model: PiperInferenceEngine, speaker: Int, request: TtsRequest): PcmAudio = try {
+        model.synthesize(speaker, request)
+    } catch (cancelled: CancellationException) {
+        throw cancelled
+    } catch (error: LinkageError) {
+        throw EngineException(EngineError.INITIALIZATION, text("engine.library", "无法加载 Piper 本地运行库"), error)
+    } catch (error: Exception) {
+        throw EngineException(EngineError.INFERENCE, text("engine.inference", "Piper 无法合成这段文字"), error)
+    }
     override val tts = object : TtsEngine {
         override val info get() = TtsInfo(if (voices.list().isEmpty()) EngineAvailability.NEEDS_RESOURCES else EngineAvailability.READY,
             voices.list(), maxTextLength = 500, selectedVoiceId = voices.selected, importsVoicePacks = true, managesVoices = true, packs = voices.packs(), supportsControl = true)
@@ -29,7 +57,7 @@ class PiperPlugin : KigPlugin {
             when (command.operation) {
                 TtsControlOperation.PREPARE -> {
                     val pack = voices.resolve(command.voiceId).first
-                    models.use(pack.cacheKey(), { modelFactory(environment, pack) }) { }
+                    models.use(pack.cacheKey(), { openModel(pack) }) { }
                 }
                 TtsControlOperation.RELEASE -> models.release()
                 TtsControlOperation.SET_RESIDENT -> models.setResident(command.resident)
@@ -41,22 +69,22 @@ class PiperPlugin : KigPlugin {
             access.withLock {
                 emit(SynthesisEvent.Started)
                 if (request.text.isBlank()) { emit(SynthesisEvent.Finished()); return@withLock }
-                require(request.text.length <= 500) { "Piper 单次文本最多 500 字符" }
+                require(request.text.length <= 500) { text("engine.text_limit", "Piper 单次最多朗读 500 个字符") }
                 val (pack, speaker) = voices.resolve(request.voiceId)
                 val started = SystemClock.elapsedRealtime()
                 var first = true
-                try { models.use(pack.cacheKey(), { modelFactory(environment, pack) }) { model ->
+                models.use(pack.cacheKey(), { openModel(pack) }) { model ->
                     for (segment in speechSegments(request.text)) {
                         currentCoroutineContext().ensureActive()
                         if (segment.isBlank()) continue
-                        val audio = model.synthesize(speaker, request.copy(text = segment, language = pack.language))
+                        val audio = synthesize(model, speaker, request.copy(text = segment, language = pack.language))
                         if (first) { Log.i("PiperPerf", "first audio ms=${SystemClock.elapsedRealtime() - started} chars=${request.text.length}"); first = false }
                         for (offset in audio.bytes.indices step 32_768) {
                             currentCoroutineContext().ensureActive()
                             emit(SynthesisEvent.Audio(PcmAudio(audio.bytes.copyOfRange(offset, minOf(offset + 32_768, audio.bytes.size)), audio.sampleRate)))
                         }
                     }
-                } } catch (error: LinkageError) { throw EngineException(EngineError.INITIALIZATION, "Piper 本地运行库加载失败", error) }
+                }
                 Log.i("PiperPerf", "finished ms=${SystemClock.elapsedRealtime() - started} chars=${request.text.length}")
                 emit(SynthesisEvent.Finished())
             }
@@ -64,7 +92,22 @@ class PiperPlugin : KigPlugin {
     }
     override val voiceManager = object : VoiceManager {
         override suspend fun command(command: VoiceCommand): PluginOutcome = withContext(Dispatchers.IO) {
-            access.withLock {
+            try {
+                runCommand(command)
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                val message = when (command.operation) {
+                    VoiceOperation.IMPORT -> text("voice.import_failed", "无法导入 Piper 语音包，请检查模型和配置文件")
+                    VoiceOperation.UPDATE_PARAMETERS -> text("voice.invalid_parameter", "语音参数无效或超出范围")
+                    else -> text("voice.action_failed", "无法完成 Piper 语音包操作")
+                }
+                throw IllegalArgumentException(message, error)
+            }
+        }
+
+        private suspend fun runCommand(command: VoiceCommand): PluginOutcome {
+            return access.withLock {
                 if (command.operation in setOf(VoiceOperation.IMPORT, VoiceOperation.DELETE, VoiceOperation.REFRESH)) models.release()
                 when (command.operation) {
                     VoiceOperation.IMPORT -> voices.import(environment.storage.file(requireNotNull(command.resourcePath)), command.packId)

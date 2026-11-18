@@ -1,8 +1,8 @@
 {
   "id": "engine.piper",
   "name": "Piper 语音引擎",
-  "version": "0.8.5",
-  "versionCode": 13,
+  "version": "0.8.6",
+  "versionCode": 14,
   "entryClass": "com.kigtts.engines.piper.PiperPlugin",
   "apiVersion": 21,
   "minSdk": 26,

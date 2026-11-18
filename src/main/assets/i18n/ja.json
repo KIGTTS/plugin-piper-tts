@@ -1,9 +1,8 @@
 {
-  "label.about": "Piper について",
   "page.title": "Piper 音声エンジン",
-  "page.body": "読み上げ設定で音声の追加、選択、管理ができます。Piper のモデルと設定を含む .kigvpk または ZIP に対応しています",
-  "page.requirements": "64 ビット ARM デバイスの読み上げ機能と組み合わせて使用します",
-  "page.manage": "読み上げ設定で Piper の音声を管理",
+  "page.body": "Piperのモデルと設定を含む.kigvpkおよびZIPファイルに対応しています。",
+  "page.requirements": "64ビットARM端末で利用できます。",
+  "page.manage": "読み上げ設定でPiperの音声を管理できます",
   "voice.export": "音声パックを書き出す",
   "parameter.timbre": "声色の変化",
   "parameter.rhythm": "リズムの変化",
@@ -18,5 +17,9 @@
   "engine.text_limit": "Piper は一度に最大 500 文字まで読み上げられます",
   "engine.initialization": "Piper の音声モデルを読み込めません",
   "engine.library": "Piper のランタイムを読み込めません",
-  "engine.inference": "Piper でこのテキストを合成できません"
+  "engine.inference": "Piper でこのテキストを合成できません",
+  "page.voices": "読み上げ音声",
+  "page.voice_library": "音声パックを管理",
+  "page.voice_library_summary": "音声のインポート、選択、編集",
+  "page.compatibility": "互換性"
 }

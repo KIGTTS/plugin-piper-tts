@@ -34,10 +34,25 @@ class PiperSynthesisTest {
         val environment = object : AndroidPluginEnvironment {
             override val context = context
             override val storage = storage
-            override val assets = files.newFolder()
+            override val assets = File("src/main/assets")
             override suspend fun download(url: String, relativePath: String, sha256: String?): File = error("network not used")
         }
         PiperPlugin().also { it.attach(environment) } to storage
+    }
+    @Test fun japaneseSettingsUseGroupedNativeRowsAndOpenTheVoiceLibrary() = runBlocking {
+        val (plugin, _) = fixture()
+        try {
+            val context = PluginContext("", "", locale = "ja-JP")
+            val entry = plugin.contributions(context).drawerEntries.single()
+            val page = requireNotNull(plugin.page(entry.pageId, context))
+            assertEquals("Piper 音声エンジン", entry.label)
+            assertEquals(entry.label, page.title)
+            val groups = page.blocks.filterIsInstance<PageBlock.Group>()
+            assertEquals(listOf("読み上げ音声", "互換性"), groups.map { it.title })
+            val voices = groups.first().children.filterIsInstance<PageBlock.Input>().single()
+            assertEquals("音声パックを管理", voices.title)
+            assertEquals(PluginOutcome.OpenPluginPage("service.speech-synthesis", "packs"), plugin.execute(voices.actionId, context))
+        } finally { plugin.close() }
     }
     private class Model : PiperInferenceEngine {
         val requests = mutableListOf<TtsRequest>()

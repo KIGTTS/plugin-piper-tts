@@ -1,9 +1,8 @@
 {
-  "label.about": "About Piper",
   "page.title": "Piper voice engine",
-  "page.body": "Add, select and manage voices in Speech Synthesis settings. Supports .kigvpk and ZIP archives containing a Piper model and configuration.",
-  "page.requirements": "Use with speech synthesis on a 64-bit ARM device.",
-  "page.manage": "Manage Piper voices in Speech Synthesis settings",
+  "page.body": "Supports .kigvpk and ZIP files containing a Piper model and configuration.",
+  "page.requirements": "Works on 64-bit ARM devices.",
+  "page.manage": "Manage Piper voices in Reading settings",
   "voice.export": "Export voice pack",
   "parameter.timbre": "Timbre variation",
   "parameter.rhythm": "Rhythm variation",
@@ -18,5 +17,9 @@
   "engine.text_limit": "Piper can read up to 500 characters at a time",
   "engine.initialization": "Could not load the Piper voice model",
   "engine.library": "Could not load the Piper runtime",
-  "engine.inference": "Piper could not synthesize this text"
+  "engine.inference": "Piper could not synthesize this text",
+  "page.voices": "Reading voices",
+  "page.voice_library": "Manage voice packs",
+  "page.voice_library_summary": "Import, select or edit voices",
+  "page.compatibility": "Compatibility"
 }

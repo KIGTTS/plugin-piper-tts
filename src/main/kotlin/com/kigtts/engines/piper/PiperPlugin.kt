@@ -12,7 +12,7 @@ import android.os.SystemClock
 import android.util.Log
 
 class PiperPlugin : KigPlugin {
-    override val descriptor = PluginDescriptor("engine.piper", "Piper 语音引擎", "导入语音包，选择喜欢的朗读声音", version = "0.8.5", license = "GPL-3.0-only")
+    override val descriptor = PluginDescriptor("engine.piper", "Piper 语音引擎", "导入语音包，选择喜欢的朗读声音", version = "0.8.6", license = "GPL-3.0-only")
     override val localization = PluginLocalization("zh-CN", listOf("zh-CN", "en", "ko", "ja"))
     private var strings = PluginStrings(emptyMap())
     private lateinit var environment: PluginEnvironment
@@ -132,16 +132,23 @@ class PiperPlugin : KigPlugin {
     override val contributions get() = contributions(PluginContext("", ""))
     override fun contributions(context: PluginContext): PluginContributions {
         fun copy(key: String, fallback: String) = strings.text(key, context.locale, fallback = fallback)
-        return PluginContributions(drawerEntries = listOf(DrawerEntry("about", copy("label.about", "Piper 插件说明"), "about", PluginIcon.SPEAKER, settingsPage = true)))
+        return PluginContributions(drawerEntries = listOf(DrawerEntry("about", copy("page.title", "Piper 语音引擎"), "about", PluginIcon.SPEAKER, settingsPage = true)))
     }
 
     override fun page(pageId: String, context: PluginContext): PluginPage? {
+        if (pageId != "about") return null
         fun copy(key: String, fallback: String) = strings.text(key, context.locale, fallback = fallback)
-        return if (pageId == "about") PluginPage(pageId, "Piper", listOf(
-            PageBlock.Text(copy("page.title", "Piper 语音引擎"), true), PageBlock.Text(copy("page.body", "在语音合成设置中添加和选择声音，也可管理已有语音包。支持 .kigvpk，以及包含 Piper 模型和配置的 ZIP 文件。")),
-            PageBlock.Notice(copy("page.requirements", "需要搭配语音合成服务使用。目前支持 64 位 ARM 设备。")))) else null
+        return PluginPage(pageId, copy("page.title", "Piper 语音引擎"), listOf(
+            PageBlock.Group(copy("page.voices", "朗读声音"), listOf(
+                PageBlock.Input(copy("page.voice_library", "管理语音包"),
+                    copy("page.voice_library_summary", "导入、选择或编辑朗读声音"), "open-voice-library", icon = PluginIcon.SPEAKER))),
+            PageBlock.Group(copy("page.compatibility", "兼容性"), listOf(
+                PageBlock.Text(copy("page.body", "支持 .kigvpk 和包含 Piper 模型及配置的 ZIP 文件。")),
+                PageBlock.Text(copy("page.requirements", "支持 64 位 ARM 设备。"))))))
     }
 
-    override suspend fun execute(actionId: String, context: PluginContext) =
-        PluginOutcome.Message(strings.text("page.manage", context.locale, fallback = "请在语音合成设置中管理 Piper 声音"))
+    override suspend fun execute(actionId: String, context: PluginContext) = when (actionId) {
+        "open-voice-library" -> PluginOutcome.OpenPluginPage("service.speech-synthesis", "packs")
+        else -> PluginOutcome.Message(strings.text("page.manage", context.locale, fallback = "请在朗读设置中管理 Piper 声音"))
+    }
 }
